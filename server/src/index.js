@@ -1,0 +1,48 @@
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser'
+import connectDB from './config/db.js';
+//---Routes import-----
+import authRoute from './routes/auth.routes.js'
+
+try{
+  await connectDB();
+  console.log(`db connected`)
+}
+catch(error) {
+   console.log(`failed to connect database`,error)
+   process.exit(1);
+}
+
+
+const app = express();
+const PORT = 3000;
+const server = http.createServer(app);
+app.use(cors({
+  origin: "http://localhost:5173", // explicitly allow your frontend
+  credentials: true, // allow cookies / auth headers
+}));
+app.use(express.json());
+
+// Middleware for cookies
+app.use(cookieParser());
+
+//public routes with access Token
+app.get('/', (req, res) => {
+  res.send('Hello from Express with TypeScript!');
+});
+app.use('/api/auth' , authRoute);
+
+
+// 9. SPECIAL AUTHENTICATION ROUTES (Must come BEFORE verifyJWT)
+// These routes handle authentication tasks and do not require a valid access token.
+
+
+
+//----listening
+server.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});
