@@ -29,7 +29,7 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers = config.headers || {}; // 🛡 Ensure headers exist
-    config.headers["Authorization"] = `Bearer +${token}`;
+    config.headers["Authorization"] = `Bearer ${token}`;
   }
   return config;
 });
@@ -46,7 +46,7 @@ api.interceptors.response.use(
         return new Promise((resolve) => {
           subscribeTokenRefresh((newToken: string) => {
             originalReq.headers = originalReq.headers || {}; // 🛡 Ensure headers exist
-            originalReq.headers["Authorization"] = `Bearer +${newToken}`;
+            originalReq.headers["Authorization"] = `Bearer ${newToken}`;
             resolve(api(originalReq)); // ✅ Retry original request
           });
         });
@@ -61,14 +61,14 @@ api.interceptors.response.use(
 
         const newAccessToken = data.accessToken;
         localStorage.setItem("accessToken", newAccessToken);
-        api.defaults.headers.common["Authorization"] = `Bearer +${newAccessToken}`;
+        api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
 
         // 🔔 Notify all queued requests
         onRefreshed(newAccessToken);
 
         // 🔁 Retry original failed request
         originalReq.headers = originalReq.headers || {};
-        originalReq.headers["Authorization"] = `Bearer +${newAccessToken}`;
+        originalReq.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return api(originalReq);
       } catch (refreshError) {
         // ❌ Refresh failed – log out

@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser'
 import connectDB from './config/db.js';
 //---Routes import-----
 import authRoute from './routes/auth.routes.js'
+import userRoute from './routes/user.routes.js'
 
 try{
   await connectDB();
@@ -38,6 +39,8 @@ app.use('/api/auth' , authRoute);
 
 
 // 9. SPECIAL AUTHENTICATION ROUTES (Must come BEFORE verifyJWT)
+app.use('/api/users',userRoute)
+
 // These routes handle authentication tasks and do not require a valid access token.
 
 

@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import mongoose from "mongoose";
 //import generateKeyPair from '../utilis/cryptoUtils.js'
 
 
@@ -23,14 +24,24 @@ const handleLogin = async (req , res ) => {
 //    console.log(`Id: `,iD);
    if(match) {
       //jwt token creation 
-    const accessToken =   jwt.sign({"username" : foundUser.username },
-                    process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn : '30s'});  
+    // const accessToken =   jwt.sign({"username" : foundUser.username },
+    //                 process.env.ACCESS_TOKEN_SECRET,
+    //                 {expiresIn : '30s'});  
 
-    const refreshToken =   jwt.sign({"username" : foundUser.username },
-                    process.env.REFRESH_TOKEN_SECRET,
-                    {expiresIn : '1d'});
-        
+    // const refreshToken =   jwt.sign({"username" : foundUser.username },
+    //                 process.env.REFRESH_TOKEN_SECRET,
+    //                 {expiresIn : '1d'});
+      const accessToken = jwt.sign(
+  { "username": foundUser.username, "userId": foundUser._id },
+  process.env.ACCESS_TOKEN_SECRET,
+  { expiresIn: '2min' }
+);
+
+    const refreshToken = jwt.sign(
+      { "username": foundUser.username, "userId": foundUser._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
     foundUser.refreshToken = refreshToken;
         await foundUser.save();
         res.cookie('jwt' , refreshToken , {httpOnly: true, maxAge: 24*60*60*1000});
@@ -70,7 +81,8 @@ const handleLogout = async (req , res) => {
     await User.updateOne({username : foundUser.username }, {$set : {refreshToken : ""}});
     
      res.clearCookie('jwt', { httpOnly: true, secure: true, sameSite: 'None' }); 
-    res.json({success : `${foundUser.username } is logged out`});
+   // res.json({success : `${foundUser.username } is logged out`});
+    res.status(204).json({success : `${foundUser.username } is logged out`});
 
 }
 
@@ -97,13 +109,24 @@ const handleRefreshToken = async (req , res) => {
             // console.log('Found User:', foundUser.username);
                 return res.sendStatus(403);
         }
-        const accessToken =   jwt.sign({"username" : foundUser.username },
-                            process.env.ACCESS_TOKEN_SECRET,
-                            {expiresIn : '30s'}); 
+        // const accessToken =   jwt.sign({"username" : foundUser.username },
+        //                     process.env.ACCESS_TOKEN_SECRET,
+        //                     {expiresIn : '30s'}); 
 
-         refreshToken =   jwt.sign({"username" : foundUser.username },
-                    process.env.REFRESH_TOKEN_SECRET,
-                    {expiresIn : '1d'});
+        //  refreshToken =   jwt.sign({"username" : foundUser.username },
+        //             process.env.REFRESH_TOKEN_SECRET,
+        //             {expiresIn : '1d'});
+                    const accessToken = jwt.sign(
+            { "username": foundUser.username, "userId": foundUser._id },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: '30s' }
+);
+
+            const refreshToken = jwt.sign(
+            { "username": foundUser.username, "userId": foundUser._id },
+            process.env.REFRESH_TOKEN_SECRET,
+            { expiresIn: "7d" }
+            );
         
          foundUser.refreshToken = refreshToken;
         console.log(`refresh Token:`,refreshToken)
@@ -135,7 +158,8 @@ const handleRegister =async (req , res) => {
 
    const hashedPwd =await bcrypt.hash(Password , 10)
   
-
+    // Create a new user ID ahead of time to use in JWTs
+    const newUserId = new mongoose.Types.ObjectId();
 //    const { publicKey, privateKey } = await generateKeyPair();
 //    const trimmedPublicKey = publicKey.replace('-----BEGIN PUBLIC KEY-----', '')
 //                                      .replace('-----END PUBLIC KEY-----', '')
@@ -143,15 +167,28 @@ const handleRegister =async (req , res) => {
 //          console.log(`trimeed: `+trimmedPublicKey)
 
          //jwt token creation 
-        const accessToken =   jwt.sign({"username" : userName },
-                    process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn : '30s'});  
+        // const accessToken =   jwt.sign({"username" : userName },
+        //             process.env.ACCESS_TOKEN_SECRET,
+        //             {expiresIn : '30s'});  
 
-        const refreshToken =   jwt.sign({"username" : userName },
-                    process.env.REFRESH_TOKEN_SECRET,
-                    {expiresIn : '1d'});
+        // const refreshToken =   jwt.sign({"username" : userName },
+        //             process.env.REFRESH_TOKEN_SECRET,
+        //             {expiresIn : '1d'});
+
+          const accessToken = jwt.sign(
+  { "username": userName, "userId": newUserId },
+  process.env.ACCESS_TOKEN_SECRET,
+  { expiresIn: '30s' }
+);
+
+    const refreshToken = jwt.sign(
+      { "username": userName, "userId": newUserId },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
 
    const newUser = new User({
+       _id : newUserId,
         username:userName,
         email : Email,
         password : hashedPwd,
