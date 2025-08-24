@@ -34,7 +34,7 @@ const handleLogin = async (req , res ) => {
       const accessToken = jwt.sign(
   { "username": foundUser.username, "userId": foundUser._id },
   process.env.ACCESS_TOKEN_SECRET,
-  { expiresIn: '2min' }
+  { expiresIn: '15min' }
 );
 
     const refreshToken = jwt.sign(
@@ -119,7 +119,7 @@ const handleRefreshToken = async (req , res) => {
                     const accessToken = jwt.sign(
             { "username": foundUser.username, "userId": foundUser._id },
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: '30s' }
+            { expiresIn: '15min' }
 );
 
             const refreshToken = jwt.sign(
@@ -178,7 +178,7 @@ const handleRegister =async (req , res) => {
           const accessToken = jwt.sign(
   { "username": userName, "userId": newUserId },
   process.env.ACCESS_TOKEN_SECRET,
-  { expiresIn: '30s' }
+  { expiresIn: '15min' }
 );
 
     const refreshToken = jwt.sign(

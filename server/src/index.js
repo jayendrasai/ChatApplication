@@ -8,6 +8,7 @@ import connectDB from './config/db.js';
 //---Routes import-----
 import authRoute from './routes/auth.routes.js'
 import userRoute from './routes/user.routes.js'
+import chatRoute from './routes/chat.routes.js'
 
 try{
   await connectDB();
@@ -40,6 +41,7 @@ app.use('/api/auth' , authRoute);
 
 // 9. SPECIAL AUTHENTICATION ROUTES (Must come BEFORE verifyJWT)
 app.use('/api/users',userRoute)
+app.use('/api/chatroom',chatRoute)
 
 // These routes handle authentication tasks and do not require a valid access token.
 
