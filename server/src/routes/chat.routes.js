@@ -1,11 +1,14 @@
-import express from 'express'
-import { createChatRoom } from "../controllers/chatroom.controller.js";
-import { verifyJWT } from "../middlewares/verifyJWT.js";
-
+import express from 'express';
+// Make sure to import getChatRooms
+import { createChatRoom, getChatRooms } from '../controllers/chatroom.controller.js';
+import { verifyJWT } from '../middlewares/verifyJWT.js';
 
 const router = express.Router();
 
+// Route to create a new chat room (already exists)
+router.post('/', verifyJWT, createChatRoom);
 
-//applying verfiyJWT middleware to this private route
-router.post('/',verifyJWT,createChatRoom);
+// Route to get all of the user's chat rooms (new)
+router.get('/', verifyJWT, getChatRooms);
+
 export default router;

@@ -43,6 +43,7 @@ app.use('/api/auth' , authRoute);
 app.use('/api/users',userRoute)
 app.use('/api/chatroom',chatRoute)
 
+
 // These routes handle authentication tasks and do not require a valid access token.
 
 
@@ -51,3 +52,4 @@ app.use('/api/chatroom',chatRoute)
 server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
+
