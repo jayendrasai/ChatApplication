@@ -5,6 +5,9 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser'
 import connectDB from './config/db.js';
+import { Server } from 'socket.io';
+import { saveMessage } from './controllers/message.controller.js';
+import { initializeSocketServer } from './socket/socketHandler.js';
 //---Routes import-----
 import authRoute from './routes/auth.routes.js'
 import userRoute from './routes/user.routes.js'
@@ -23,6 +26,7 @@ catch(error) {
 const app = express();
 const PORT = 3000;
 const server = http.createServer(app);
+
 app.use(cors({
   origin: "http://localhost:5173", // explicitly allow your frontend
   credentials: true, // allow cookies / auth headers
@@ -47,7 +51,8 @@ app.use('/api/chatroom',chatRoute)
 // These routes handle authentication tasks and do not require a valid access token.
 
 
-
+// Initialize socket server
+initializeSocketServer(server);
 //----listening
 server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
