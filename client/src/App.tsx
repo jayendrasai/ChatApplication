@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthProvider';
 import {BrowserRouter as Router , Routes , Route , Link, useNavigate, Navigate } from 'react-router-dom'
 import { AuthPage } from './features/auth/pages/AuthPage';
 import { LoginForm } from './features/auth/components/LoginForm';
+import { SocketProvider } from './context/SocketProvider';
+import { ChatPage } from './features/chat/pages/ChatPage';
+
 
 const HomePage = () => {
   const {logout} = useAuth();
@@ -38,7 +41,10 @@ export default function App() {
              path='/' 
              element={
                 <ProtectedRoute>
-                   <HomePage/>
+                   {/* <HomePage/> */}
+                   <SocketProvider>
+                       <ChatPage/>
+                   </SocketProvider>
                 </ProtectedRoute>
               } 
           />
@@ -47,9 +53,9 @@ export default function App() {
           <Route 
               path='/auth' 
               element={
-              <AuthRedirector>
-                <AuthPage/>
-              </AuthRedirector>
+                  <AuthRedirector>
+                    <AuthPage/>
+                  </AuthRedirector>
               } 
           />
         </Routes>
