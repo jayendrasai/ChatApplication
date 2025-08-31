@@ -18,6 +18,14 @@ export const SocketProvider = ({children}:{children : ReactNode}) => {
             socket.auth = {token : accessToken};
             //manually connect the socket
             socket.connect();
+            // Optional: Add listeners for debugging
+            socket.on('connect', () => {
+                console.log(`Socket connected with ID: ${socket.id}`);
+            });
+            
+            socket.on('disconnect', (reason) => {
+                console.log(`Socket disconnected: ${reason}`);
+            });
         }
         //Disconnect the socket when the component unmounts or user logs out
         return () => {

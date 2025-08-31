@@ -12,6 +12,7 @@ import { initializeSocketServer } from './socket/socketHandler.js';
 import authRoute from './routes/auth.routes.js'
 import userRoute from './routes/user.routes.js'
 import chatRoute from './routes/chat.routes.js'
+//import messageRoute from './routes/message.route.js'
 
 try{
   await connectDB();
@@ -46,6 +47,7 @@ app.use('/api/auth' , authRoute);
 // 9. SPECIAL AUTHENTICATION ROUTES (Must come BEFORE verifyJWT)
 app.use('/api/users',userRoute)
 app.use('/api/chatroom',chatRoute)
+//app.use('/api/mesages',messageRoute)
 
 
 // These routes handle authentication tasks and do not require a valid access token.

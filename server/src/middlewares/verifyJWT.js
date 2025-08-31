@@ -7,10 +7,10 @@ export const verifyJWT = (req, res, next) => {
   // Use req.headers.authorization for convention
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
-  console.log(authHeader)
+ // console.log(authHeader)
   // Check if the header exists and is in the correct format
   if (!authHeader?.startsWith("Bearer ")) {
-    console.log(authHeader)
+   // console.log(authHeader)
     return res.sendStatus(401); // Unauthorized
   }
 

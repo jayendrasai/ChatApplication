@@ -28,14 +28,14 @@ export const initializeSocketServer = (server) => {
 
 
     io.on("connection" , (socket) => {
-        console.log(`User connection : ${socket.id} with user ID: ${socket.userId}`);
+      //  console.log(`User connection : ${socket.id} with user ID: ${socket.userId}`);
 
         socket.on("join_room" , (chatRoomId) => {
             socket.join(chatRoomId);
-            console.log(`User ${socket.userId} joined room: ${chatRoomId}`);
+         //   console.log(`User ${socket.userId} joined room: ${chatRoomId}`);
         });
         socket.on("send_message", async(data) => {
-            const {chatRoomId , encryptedText} =data;
+            const {chatRoomId , encryptedText} = data;
             const senderId = socket.userId;
             const savedMessage = await saveMessage({chatRoomId , senderId , encryptedText})
             if(savedMessage){

@@ -36,7 +36,7 @@ const handleLogin = async (req , res ) => {
         await foundUser.save();
         res.cookie('jwt' , refreshToken , {httpOnly: true, maxAge: 24*60*60*1000});
     
-                    res.json({
+        res.json({
             accessToken,
             success: `User ${foundUser.username} logged in`
             });
@@ -57,7 +57,7 @@ const handleLogout = async (req , res) => {
     const cookies = req.cookies;
     if(!cookies?.jwt) return res.status(204).json({message : "No content"})
     const refreshToken = cookies.jwt;
-    console.log(refreshToken);
+   // console.log(refreshToken);
     //Is refresh Token in DB
     const foundUser = await User.findOne({refreshToken: refreshToken}).exec();
     if(!foundUser) {
@@ -75,7 +75,7 @@ const handleLogout = async (req , res) => {
 
 const handleRefreshToken = async (req , res) => {
    const cookies = req.cookies;
-   console.log(cookies)
+  // console.log(cookies)
    if(!cookies) return res.status(401).json({message : "unAuthorized"})
     let refreshToken = cookies.jwt;
 
@@ -96,7 +96,7 @@ const handleRefreshToken = async (req , res) => {
                 return res.sendStatus(403);
         }
       
-                    const accessToken = jwt.sign(
+        const accessToken = jwt.sign(
             { "username": foundUser.username, "userId": foundUser._id },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: '15min' }
@@ -109,8 +109,8 @@ const handleRefreshToken = async (req , res) => {
             );
         
          foundUser.refreshToken = refreshToken;
-        console.log(`refresh Token:`,refreshToken)
-        console.log(`Access Token`,accessToken)
+        // console.log(`refresh Token:`,refreshToken)
+        // console.log(`Access Token`,accessToken)
         res.json({accessToken})
 
 
@@ -126,7 +126,7 @@ const handleRefreshToken = async (req , res) => {
 
 const handleRegister =async (req , res) => {
    const {userName , Email  ,Password , publicKey } = req.body;
-   console.log(`sass------${Password} , ${userName,Email}`)
+  // console.log(`sass------${Password} , ${userName,Email}`)
    if(!userName || !Password || !Email || !publicKey) return res.status(403).json({message : "Invalid credentials"});
    try {
 
@@ -163,7 +163,7 @@ const handleRegister =async (req , res) => {
         refreshToken: refreshToken
    });
    await newUser.save();
-   console.log('newUser: '+ newUser);
+  // console.log('newUser: '+ newUser);
 
    res.status(201).json({
             accessToken,
