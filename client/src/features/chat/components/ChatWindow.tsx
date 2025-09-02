@@ -45,11 +45,14 @@ export const ChatWindow = ({ chatRoom }: ChatWindowProps) => {
 
           // Build a new message object with decrypted text
           const newMessage: MessageType = {
-            _id: incomingMessage._id,
-            chatRoomId: incomingMessage.chatRoomId,
-            sender: incomingMessage.sender,
-            text: decryptedText, // store readable message
-            createdAt: incomingMessage.createdAt,
+            // _id: incomingMessage._id,
+            // chatroomId: incomingMessage.chatRoomId,
+            // sender: incomingMessage.sender,
+            
+            // text: decryptedText, // store readable message
+            // createdAt: incomingMessage.createdAt,
+            ...incomingMessage,
+            text: decryptedText,
           };
 
           // Add the new message to state (triggers re-render)

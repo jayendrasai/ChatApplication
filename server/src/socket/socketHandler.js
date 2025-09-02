@@ -34,14 +34,41 @@ export const initializeSocketServer = (server) => {
             socket.join(chatRoomId);
          //   console.log(`User ${socket.userId} joined room: ${chatRoomId}`);
         });
-        socket.on("send_message", async(data) => {
-            const {chatRoomId , encryptedText} = data;
-            const senderId = socket.userId;
-            const savedMessage = await saveMessage({chatRoomId , senderId , encryptedText})
-            if(savedMessage){
-                socket.to(chatRoomId).emit("receive_message", savedMessage);
-            }
+        socket.on("leave_room" , (chatRoomId) => {
+            socket.leave(chatRoomId);
+         //   console.log(`User ${socket.userId} joined room: ${chatRoomId}`);
         });
+
+        socket.on("send_message", async (message) => {
+      try {
+        // Expecting: { chatroomId, encryptedText }
+        if (!message?.chatroomId) {
+          console.error("❌ Missing chatroomId in payload:", message);
+          return;
+        }
+        if (typeof message.encryptedText !== "string") {
+          console.error(
+            "❌ encryptedText must be a stringified JSON:",
+            message.encryptedText
+          );
+          return;
+        }
+
+        const messageData = {
+          chatroomId: message.chatroomId,
+          sender: socket.userId,
+          encryptedText: message.encryptedText,
+        };
+
+        const savedMessage = await saveMessage(messageData);
+        if (!savedMessage) return;
+
+        // ✅ Send to everyone EXCEPT the sender
+        socket.to(message.chatroomId).emit("receive_message", savedMessage);
+      } catch (err) {
+        console.error("🔥 Error handling message:", err);
+      }
+    });
         socket.on("disconnect" , ()=> {
             console.log(`User disconnected: ${socket.id}`);
         });

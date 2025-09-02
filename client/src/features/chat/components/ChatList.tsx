@@ -2,6 +2,8 @@ import React , {useState , useEffect } from 'react';
 import { getMyChatRooms } from '../../../services/chat.services';
 import { ChatRoom } from '../../../types/chat.types';
 import { useAuth } from '../../../context/AuthProvider';
+import { decryptMessage } from '../../../services/crypto.service';
+import { Message } from '../../../types/chat.types';
 
 interface ChatListProps{
   onSelectChat : (chatRoom : ChatRoom) => void;
@@ -17,21 +19,91 @@ export const ChatList = ({onSelectChat} : ChatListProps) => {
     const { user, logout } = useAuth();
 
 
-    useEffect (() => {
-        const fetchChatRooms = async () => {
-            try {
-                const rooms = await getMyChatRooms();
-                setChatRooms(rooms);
+    // useEffect (() => {
+    //     const fetchChatRooms = async () => {
+    //         try {
+    //             const rooms = await getMyChatRooms();
+    //             setChatRooms(rooms);
 
-            } catch (error) {
-                setError('Failed to fetch chat rooms.');
+    //         } catch (error) {
+    //             setError('Failed to fetch chat rooms.');
+    //         }
+    //         finally{
+    //             setLoading(false);
+    //         }
+    //     };
+    //     fetchChatRooms();
+    // },[]);
+    useEffect(() => { // Ensure libsodium is ready
+
+    const fetchChatRooms = async () => {
+      const privateKeyBase64 = localStorage.getItem('privateKey');
+      if (!privateKeyBase64) {
+        setError('User private key not found. Cannot decrypt messages.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const rooms = await getMyChatRooms();
+
+        const roomsWithDecryptedLastMessage = await Promise.all(
+          rooms.map(async (room) => {
+            // Check if lastMessage and encryptedText exist
+            if (room.lastMessage && typeof room.lastMessage.encryptedText === 'string') {
+              try {
+                // Parse the JSON string from the server into an object
+                const parsedEncryptedText = JSON.parse(room.lastMessage.encryptedText);
+                
+                // Find the other participant to get their public key for decryption
+                const otherParticipant = room.participants.find(p => p._id !== user?._id);
+                 console.log(`dad: ${otherParticipant?.publicKey}`)
+                if (!otherParticipant?.publicKey) {
+                  throw new Error('Other participant or their public key not found.');
+                }
+                
+                // Ensure the required properties exist on the parsed object
+                if (!parsedEncryptedText.ciphertextBase64 || !parsedEncryptedText.nonceBase64) {
+                    throw new Error('Invalid encrypted text format for decryption.');
+                }
+
+                const decryptedContent = await decryptMessage(
+                  parsedEncryptedText.ciphertextBase64,
+                  parsedEncryptedText.nonceBase64,
+                  otherParticipant.publicKey,
+                  privateKeyBase64
+                );
+
+                return {
+                  ...room,
+                  lastMessage: {
+                    ...room.lastMessage,
+                    text: decryptedContent,
+                  },
+                };
+              } catch (e) {
+                console.error('Failed to decrypt last message:', e);
+                return {
+                  ...room,
+                  lastMessage: {
+                    ...room.lastMessage,
+                    text: '[Failed to decrypt]',
+                  },
+                };
+              }
             }
-            finally{
-                setLoading(false);
-            }
-        };
-        fetchChatRooms();
-    },[]);
+            return room;
+          })
+        );
+        setChatRooms(roomsWithDecryptedLastMessage);
+      } catch (error) {
+        setError('Failed to fetch chat rooms.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchChatRooms();
+  }, [user]);
 
     //Find the other participant's username for display
     const getOtherParticipantName = (room : ChatRoom) => {
@@ -82,12 +154,15 @@ export const ChatList = ({onSelectChat} : ChatListProps) => {
             {/* Last message preview */}
             <p className="text-sm text-gray-600 truncate mt-1">
               {room.lastMessage
-                ? room.lastMessage.encryptedText
+                ? room.lastMessage.text
                 : "No messages yet"}
             </p>
           </div>
+
         ))}
       </div>
     </div>
   );
 };
+
+

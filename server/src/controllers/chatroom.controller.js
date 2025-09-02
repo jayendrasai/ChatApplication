@@ -77,16 +77,35 @@ export const getChatRooms = async (req, res) => {
 
   try {
     // Find all chat rooms where the 'participants' array contains the current user's ID.
-    const chatRooms = await ChatRoom.find({ participants: currentUserId })
-      // Sort the chat rooms by the most recent activity (last updated).
-      .sort({ updatedAt: -1 })
-      // Populate the 'participants' field to include user details (like username and publicKey),
-      // while excluding sensitive information.
-      .populate("participants", "-password -refreshToken")
-      // Populate the 'lastMessage' field to show a preview in the chat list.
-      .populate("lastMessage")
-      .exec();
+    // const chatRooms = await ChatRoom.find({ participants: currentUserId })
+    //   // Sort the chat rooms by the most recent activity (last updated).
+    //   .sort({ updatedAt: -1 })
+    //   // Populate the 'participants' field to include user details (like username and publicKey),
+    //   // while excluding sensitive information.
+    //   .populate("participants", "-password -refreshToken")
+    //   // Populate the 'lastMessage' field to show a preview in the chat list.
+    //   .populate("lastMessage")
+    //   .exec();
 
+    const chatRooms = await ChatRoom.find({ participants: currentUserId })
+      .sort({ updatedAt: -1 })
+      // Corrected Population: Use an array of objects to perform nested population
+      .populate([
+        {
+          path: "participants",
+          select: "-password -refreshToken",
+        },
+        {
+          path: "lastMessage",
+          // Here, we tell Mongoose to populate the 'sender' field within the 'lastMessage' document.
+          populate: {
+            path: "sender",
+            select: "username publicKey",
+          },
+        },
+      ])
+      .exec();
+   console.log(`chatList: ${JSON.stringify(chatRooms, null, 2)}`); // Use JSON.stringify for cleaner logging
     res.status(200).json(chatRooms);
   } catch (err) {
     console.error("Error fetching chat rooms:", err);

@@ -15,7 +15,7 @@ export const saveMessage = async (messageData) => {
         });
 
         const populatedMessage = await Message.findById(newMessage._id)
-                                                                      .populate('senderId' , 'username publicKey avatarUrl')
+                                                                      .populate('sender' , 'username publicKey avatarUrl')
                                                                       .exec();
                                                         
     

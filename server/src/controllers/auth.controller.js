@@ -73,56 +73,114 @@ const handleLogout = async (req , res) => {
 
 }
 
-const handleRefreshToken = async (req , res) => {
-   const cookies = req.cookies;
-  // console.log(cookies)
-   if(!cookies) return res.status(401).json({message : "unAuthorized"})
-    let refreshToken = cookies.jwt;
+// const handleRefreshToken = async (req , res) => {
+//    const cookies = req.cookies;
+//   // console.log(cookies)
+//    if(!cookies) return res.status(401).json({message : "unAuthorized"})
+//     let refreshToken = cookies.jwt;
 
-    try {
-        const foundUser = await User.findOne({refreshToken : refreshToken}).exec();
-        if(!foundUser) {
-            return res.status(403);
-        }
-        let decoded;
-                try{
-                    decoded = jwt.verify(refreshToken , process.env.REFRESH_TOKEN_SECRET);
-                }catch(error){
-                    console.log(error)
-                    res.status(403)
-                }
-        if(decoded.username !== foundUser.username){
+//     try {
+//         const foundUser = await User.findOne({refreshToken : refreshToken}).exec();
+//         if(!foundUser) {
+//             return res.status(403);
+//         }
+//         let decoded;
+//                 try{
+//                     decoded = jwt.verify(refreshToken , process.env.REFRESH_TOKEN_SECRET);
+//                 }catch(error){
+//                     console.log(error)
+//                     res.status(403)
+//                 }
+//         if(decoded.username !== foundUser.username){
          
-                return res.sendStatus(403);
-        }
+//                 return res.sendStatus(403);
+//         }
       
-        const accessToken = jwt.sign(
-            { "username": foundUser.username, "userId": foundUser._id },
-            process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: '15min' }
-);
+//         const accessToken = jwt.sign(
+//             { "username": foundUser.username, "userId": foundUser._id },
+//             process.env.ACCESS_TOKEN_SECRET,
+//             { expiresIn: '15min' }
+// );
 
-            const refreshToken = jwt.sign(
-            { "username": foundUser.username, "userId": foundUser._id },
-            process.env.REFRESH_TOKEN_SECRET,
-            { expiresIn: "7d" }
-            );
+//             const refreshToken = jwt.sign(
+//             { "username": foundUser.username, "userId": foundUser._id },
+//             process.env.REFRESH_TOKEN_SECRET,
+//             { expiresIn: "7d" }
+//             );
         
-         foundUser.refreshToken = refreshToken;
-        // console.log(`refresh Token:`,refreshToken)
-        // console.log(`Access Token`,accessToken)
-        res.json({accessToken})
+//          foundUser.refreshToken = refreshToken;
+//         // console.log(`refresh Token:`,refreshToken)
+//         // console.log(`Access Token`,accessToken)
+//         res.json({accessToken})
 
 
-    } catch (error) {
-        console.log(error);
-     res.sendStatus(500);
+//     } catch (error) {
+//         console.log(error);
+//      res.sendStatus(500);
+//     }
+
+
+
+
+// }
+
+const handleRefreshToken = async (req, res) => {
+  const cookies = req.cookies;
+
+  if (!cookies?.jwt) return res.status(401).json({ message: "Unauthorized" });
+
+  const oldRefreshToken = cookies.jwt;
+
+  try {
+    const foundUser = await User.findOne({ refreshToken: oldRefreshToken }).exec();
+    if (!foundUser) {
+      return res.sendStatus(403); // Forbidden
     }
 
+    let decoded;
+    try {
+      decoded = jwt.verify(oldRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (error) {
+      console.log(error);
+      return res.sendStatus(403);
+    }
 
+    if (decoded.username !== foundUser.username) {
+      return res.sendStatus(403);
+    }
 
+    // Issue new tokens
+    const accessToken = jwt.sign(
+      { username: foundUser.username, userId: foundUser._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "30m" }
+    );
 
-}
+    const newRefreshToken = jwt.sign(
+      { username: foundUser.username, userId: foundUser._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Save new refresh token in DB
+    foundUser.refreshToken = newRefreshToken;
+    await foundUser.save();
+
+    // Send new refresh token back in httpOnly cookie
+    res.cookie("jwt", newRefreshToken, {
+      httpOnly: true,
+      secure: true,      // set false if testing on localhost without HTTPS
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Send access token in response
+    res.json({ accessToken });
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+};
 
 const handleRegister =async (req , res) => {
    const {userName , Email  ,Password , publicKey } = req.body;
