@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
-import jwt from 'jsonwebtoken';
+import jwt, {decode} from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
 //import generateKeyPair from '../utilis/cryptoUtils.js'
 
 

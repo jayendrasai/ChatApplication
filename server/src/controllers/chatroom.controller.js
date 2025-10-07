@@ -2,6 +2,7 @@
 import ChatRoom from '../models/Chatroom.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
+import Message from "../models/Message.js";
 
 export const createChatRoom = async (req, res) => {
     const { recipientId } = req.body;
@@ -73,6 +74,7 @@ export const createChatRoom = async (req, res) => {
  * Fetches all chat rooms for the currently authenticated user.
  */
 export const getChatRooms = async (req, res) => {
+  const {chatroomId} = req.params;
   const currentUserId = req.userId;
 
   try {
@@ -87,28 +89,99 @@ export const getChatRooms = async (req, res) => {
     //   .populate("lastMessage")
     //   .exec();
 
-    const chatRooms = await ChatRoom.find({ participants: currentUserId })
-      .sort({ updatedAt: -1 })
-      // Corrected Population: Use an array of objects to perform nested population
-      .populate([
-        {
-          path: "participants",
-          select: "-password -refreshToken",
-        },
-        {
-          path: "lastMessage",
-          // Here, we tell Mongoose to populate the 'sender' field within the 'lastMessage' document.
-          populate: {
-            path: "sender",
-            select: "username publicKey",
-          },
-        },
-      ])
+   const chatRoom = await ChatRoom.findById(chatroomId);
+
+    if (!chatRoom) {
+      return res.status(404).json({ message: "Chat room not found" });
+    }
+
+    // Check if current user is a participant
+    const isParticipant = chatRoom.participants.some(
+      (participantId) => participantId.toString() === currentUserId.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        message: "Access denied. You are not a participant in this chat room.",
+      });
+    }
+
+    // Fetch all messages for this chat room, sorted by creation time
+    const messages = await Message.find({ chatroomId })
+      .sort({ createdAt: 1 }) // Oldest first
+      .populate("sender", "username publicKey") // Populate sender info
       .exec();
-   console.log(`chatList: ${JSON.stringify(chatRooms, null, 2)}`); // Use JSON.stringify for cleaner logging
-    res.status(200).json(chatRooms);
+
+    res.status(200).json(messages);
   } catch (err) {
     console.error("Error fetching chat rooms:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+/**
+ * Fetches all messages for a specific chat room
+ */
+export const getChatMessages = async (req, res) => {
+  const { chatroomId } = req.params;
+  const currentUserId = req.userId;
+
+  try {
+    // First, verify that the user is a participant in this chat room
+    const chatRoom = await ChatRoom.findById(chatroomId);
+
+    if (!chatRoom) {
+      return res.status(404).json({ message: "Chat room not found" });
+    }
+
+    // Check if current user is a participant
+    const isParticipant = chatRoom.participants.some(
+      (participantId) => participantId.toString() === currentUserId.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        message: "Access denied. You are not a participant in this chat room.",
+      });
+    }
+
+    // Fetch all messages for this chat room, sorted by creation time
+    const messages = await Message.find({ chatroomId })
+      .sort({ createdAt: 1 }) // Oldest first
+      .populate("sender", "username publicKey") // Populate sender info
+      .exec();
+
+    res.status(200).json(messages);
+  } catch (err) {
+    console.error("Error fetching chat messages:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+//marking chat as read
+export const markChatAsRead = async (req, res) => {
+  const { chatroomId } = req.params;
+  const { userId } = req;
+
+  try {
+    const chatRoom = await ChatRoom.findById(chatroomId);
+    if (!chatRoom) {
+      return res.status(404).json({ message: "Chat room not found" });
+    }
+
+    if (chatRoom.unreadCount.has(userId)) {
+      chatRoom.unreadCount.set(userId, 0);
+      await chatRoom.save();
+    }
+
+    // ✅ Send a success response back to the client
+    res.status(200).json({ message: "Chat marked as read." });
+  } catch (err) {
+    console.error("Error marking chat as read:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
